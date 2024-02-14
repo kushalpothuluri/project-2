@@ -1,0 +1,66 @@
+from typing import Final
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+
+TOKEN: Final = '6927279623:AAFSLYc3o3tX5EgtZC-ONftcHuJABgr0SBo'
+BOT_USERNAME = '@project2_kus_bot'
+
+async def start_command(update: Update, context: CallbackContext):
+    await update.message.reply_text('Hello, thanks for waiting for me')
+
+async def help_command(update: Update, context: CallbackContext):
+    await update.message.reply_text('Please type something so that I can respond')
+
+async def custom_command(update: Update, context: CallbackContext):
+    await update.message.reply_text('This is the custom command')
+
+# Responses
+
+def handle_responses(text: str) -> str:
+    if 'hello' in text:
+        return 'hey there!'
+    if 'how are you' in text:
+        return 'I am fine, wbu'
+    if 'what are you doing' in text:
+        return 'ntg much, and you'
+
+async def handle_message(update: Update, context: CallbackContext):
+    message_type: str = update.message.chat.type
+    text: str = update.message.text
+
+    print(f'user({update.message.chat.id}) in {message_type}, "{text}"')
+
+    if message_type == 'group':
+        if BOT_USERNAME in text:
+            new_text: str = text.replace(BOT_USERNAME, '').strip()
+            response: str = handle_responses(new_text)
+        else:
+            return
+    else:
+        response: str = handle_responses(text)
+
+    print('Bot:', response)
+    await update.message.reply_text(response)
+
+async def error(update: Update, context: CallbackContext):
+    print(f'update {update} caused error {context.error}')
+
+if __name__ == '__main__':
+    print('Starting bot...')
+    updater = Updater(token=TOKEN, use_context=True)
+
+    # Commands
+    updater.dispatcher.add_handler(CommandHandler('start', start_command))
+    updater.dispatcher.add_handler(CommandHandler('help', help_command))
+    updater.dispatcher.add_handler(CommandHandler('custom', custom_command))
+
+    # Messages
+    updater.dispatcher.add_handler(MessageHandler(Filters.text, handle_message))
+
+    # Error handler
+    updater.dispatcher.add_error_handler(error)
+
+    # Start polling
+    print('Polling...')
+    updater.start_polling()
+    updater.idle()
